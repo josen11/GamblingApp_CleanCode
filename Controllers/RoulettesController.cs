@@ -128,6 +128,7 @@ namespace GamblingApp.Controllers
             return BadRequest();
         }
         // POST api/<RoulettesController>/create
+        // Create a roulette based in requerimients
         [HttpPost("[action]")]
         public async Task<ActionResult<RouletteCreateResponseDTO>> create()
         {
@@ -166,7 +167,7 @@ namespace GamblingApp.Controllers
         }
 
         // PUT api/<RoulettesController>/open/5/
-        // [Route("open")]
+        // Open a roulette based in requerimients
         [HttpPut("[action]/{id}")]
         public async Task<IActionResult> open(int id)
         {
@@ -205,7 +206,9 @@ namespace GamblingApp.Controllers
             }
             return BadRequest(ModelState);
         }
-
+        // PUT api/<RoulettesController>/close/5/
+        // Close a roulette based in requerimients and considering the roulette profit and winner users credit 
+        
         [HttpPut("[action]/{id}")]
         public async Task<ActionResult> close(int id)
         {
@@ -244,7 +247,9 @@ namespace GamblingApp.Controllers
             }
             return BadRequest(ModelState);
         }
+        #region Validations and functions
         [ApiExplorerSettings(IgnoreApi = true)]
+        // Get winner bets and update roulette profit and winner users credit 
         public void setWinners(List<ActionModel> actionsByRoulette, int winnerNumber)
         {
             List<ActionModel> actions = actionsByRoulette;
@@ -293,7 +298,9 @@ namespace GamblingApp.Controllers
                 }
             }
         }
+        
         [ApiExplorerSettings(IgnoreApi = true)]
+        // Get list of actions (bets) by roulette 
         public List<ActionModel> getActionsbyRolette(int idRoulette)
         {
             string constr = appSettings.Value.DefaultConnection;
@@ -327,7 +334,9 @@ namespace GamblingApp.Controllers
             }
             return actions;
         }
+        
         [ApiExplorerSettings(IgnoreApi = true)]
+        // Get winner color based in requeriments 
         public string getColor(int winnerNumber)
         {
             if (winnerNumber == 0 || winnerNumber % 2 == 0)
@@ -335,7 +344,9 @@ namespace GamblingApp.Controllers
             else
                 return "negro";
         }
+        
         [ApiExplorerSettings(IgnoreApi = true)]
+        // Calculate prize based in requeriments (color 1.8X and number 5X) 
         public double getPrizeWinner(double handle,char typeBeatWon)
         {
             if (typeBeatWon == '0')
@@ -347,7 +358,9 @@ namespace GamblingApp.Controllers
                 return handle * 1.8;
             }
         }
+        
         [ApiExplorerSettings(IgnoreApi = true)]
+        // Get current user credit 
         public double getCredit(string userId)
         {
             string constr = appSettings.Value.DefaultConnection;
@@ -381,7 +394,9 @@ namespace GamblingApp.Controllers
                 return userCredit.Credit;
             }
         }
+        
         [ApiExplorerSettings(IgnoreApi = true)]
+        // Get current roulette profit 
         public double getProfit(int Id)
         {
             string constr = appSettings.Value.DefaultConnection;
@@ -415,7 +430,9 @@ namespace GamblingApp.Controllers
                 return rouletteProfit.Profit;
             }
         }
+        
         [ApiExplorerSettings(IgnoreApi = true)]
+        // Update user credit by prize
         public void updateCreditPrize(string userId, double handle, char typeBetWon)
         {
             double currentCredit = getCredit(userId);
@@ -436,7 +453,9 @@ namespace GamblingApp.Controllers
                 }
             }
         }
+        
         [ApiExplorerSettings(IgnoreApi = true)]
+        // Update roulette profit by prize
         public void updateProfitPrize(int id, double prize)
         {
             double currentProfit = getProfit(id);
@@ -457,35 +476,8 @@ namespace GamblingApp.Controllers
                 }
             }       
         }
-        [ApiExplorerSettings(IgnoreApi = true)]
-        public void updateWinnerNumber(int idRoulette, int winnerNumber)
-        {
-            string constr = appSettings.Value.DefaultConnection;
-            RouletteModel roulette = new RouletteModel();
-            List<ActionModel> actions = new List<ActionModel>();
-            if (ModelState.IsValid)
-            {
-                string query = "UPDATE Rulette SET WinnerNumber = " + winnerNumber + " Where Id =" + idRoulette;
-                using (SqlConnection con = new SqlConnection(constr))
-                {
-                    using (SqlCommand cmd = new SqlCommand(query))
-                    {
-                        cmd.Connection = con;
-                        con.Open();
-                        int i = cmd.ExecuteNonQuery();
-                        if (i > 0)
-                        {
-                            _logger.LogInformation("Winner number updated");
-                        }
-                        else
-                        {
-                            _logger.LogInformation("Error when updating Winner number");
-                        }
-                        con.Close();
-                    }
-                }
-            }
-        }
+        #endregion
+
         // PUT api/<RoulettesController>/5
         [HttpPut("{id}")]
         public async Task<IActionResult> Put(long id, RouletteModel rouletteModel)
@@ -538,7 +530,6 @@ namespace GamblingApp.Controllers
             }
             return BadRequest(ModelState);
         }
-        
 
         // DELETE api/<RoulettesController>/5
         [HttpDelete("{id}")]

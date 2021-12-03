@@ -14,7 +14,6 @@ namespace GamblingApp.Controllers
     {
         private readonly IOptions<ConnectionStrings> appSettings;
         private readonly ILogger<ActionsController> _logger;
-
         public ActionsController(IOptions<ConnectionStrings> app, ILogger<ActionsController> logger)
         {
             appSettings = app;
@@ -97,7 +96,9 @@ namespace GamblingApp.Controllers
         }
 
         #region Validations and functions
+        //Use this for ignoring functions in Swagger
         [ApiExplorerSettings(IgnoreApi = true)]
+        //Get currect Roulettestatus and validate if roulette is open
         public bool validateStatusRoulette(int id)
         {
             string constr = appSettings.Value.DefaultConnection;
@@ -135,6 +136,7 @@ namespace GamblingApp.Controllers
             }
         }
         [ApiExplorerSettings(IgnoreApi = true)]
+        //Validate correct format or options of a bet
         public bool validateBet(bool type,string Bet)
         {
             //False=Number True=Color
@@ -160,6 +162,7 @@ namespace GamblingApp.Controllers
             }
         }
         [ApiExplorerSettings(IgnoreApi = true)]
+        //Validate user has enough credit based in bet handle
         public double validateCredit(string userId, double handle)
         {
             string constr = appSettings.Value.DefaultConnection;
@@ -194,6 +197,7 @@ namespace GamblingApp.Controllers
             }
         }
         [ApiExplorerSettings(IgnoreApi = true)]
+        //Update user credit after placing the bet
         public void updateCredit(string userId, double handle)
         {
             _logger.LogInformation("Entra a updateCredit");
@@ -213,6 +217,7 @@ namespace GamblingApp.Controllers
             }
         }
         [ApiExplorerSettings(IgnoreApi = true)]
+        //Update roulette profit after placing a bet
         public void updateProfit(int id, double handle)
         {
             string constr = appSettings.Value.DefaultConnection;
@@ -222,7 +227,7 @@ namespace GamblingApp.Controllers
                 using (SqlCommand cmd = new SqlCommand(query, con))
                 {
                     cmd.Connection = con;
-                    cmd.Parameters.AddWithValue("@Profit", validateRouletteProfit(id) + handle);
+                    cmd.Parameters.AddWithValue("@Profit", getRouletteProfit(id) + handle);
                     con.Open();
                     int i = cmd.ExecuteNonQuery();
                     con.Close();
@@ -230,7 +235,8 @@ namespace GamblingApp.Controllers
             }
         }
         [ApiExplorerSettings(IgnoreApi = true)]
-        public double validateRouletteProfit(int id)
+        //Get current Roulette profit
+        public double getRouletteProfit(int id)
         {
             string constr = appSettings.Value.DefaultConnection;
             RouletteProfitDTO rouletteObj = new RouletteProfitDTO();
@@ -300,7 +306,8 @@ namespace GamblingApp.Controllers
             return BadRequest();
         }
 
-        // POST api/<ActionsController>
+        // POST api/<ActionsController>/create
+        // Create a bet (Action in gambling terms) based in requerements
         [HttpPost("[action]")]
         public async Task<ActionResult<ActionModel>> create([FromHeader] string userId, CreateActionDTO ActionModel)
         {
@@ -313,7 +320,6 @@ namespace GamblingApp.Controllers
             {
                 using (SqlConnection con = new SqlConnection(constr))
                 {
-                    //inserting Patient data into database
                     string query = "insert into Action values (@CreationDateTime, @BetType,@Bet,@Handle,@UserId,@RouletteId,@IsWinner)";
                     using (SqlCommand cmd = new SqlCommand(query, con))
                     {
