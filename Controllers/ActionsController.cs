@@ -307,7 +307,7 @@ namespace GamblingApp.Controllers
         }
 
         // POST api/<ActionsController>/create
-        // Create a bet (Action in gambling terms) based in requerements
+        // Create a bet ("action" in gambling terms) based in requerements
         [HttpPost("[action]")]
         public async Task<ActionResult<ActionModel>> create([FromHeader] string userId, CreateActionDTO ActionModel)
         {

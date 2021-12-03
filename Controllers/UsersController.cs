@@ -155,7 +155,7 @@ namespace GamblingApp.Controllers
 
         // DELETE api/<UsersController>/5
         [HttpDelete("{userId}")]
-        public async Task<IActionResult> DeleteUsers(string userId)
+        public async Task<IActionResult> Delete(string userId)
         {
             string constr = appSettings.Value.DefaultConnection;
             using (SqlConnection con = new SqlConnection(constr))

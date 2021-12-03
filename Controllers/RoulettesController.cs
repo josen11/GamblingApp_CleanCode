@@ -254,20 +254,20 @@ namespace GamblingApp.Controllers
         {
             List<ActionModel> actions = actionsByRoulette;
             List<int> WinnersId = new List<int>();
-            string winnerColor = getColor(winnerNumber);
+            string winnerColor = getWinnerColor(winnerNumber);
             for (int i = 0; i < actions.Count; i++)
             {
                 if (actions[i].Bet == winnerNumber.ToString())
                 {
                     WinnersId.Add(actions[i].Id);
-                    updateCreditPrize(actions[i].UserId, actions[i].Handle, '0');
-                    updateProfitPrize(actions[i].RouletteId, getPrizeWinner(actions[i].Handle, '0'));
+                    updateCreditbyPrize(actions[i].UserId, actions[i].Handle, '0');
+                    updateProfitbyPrize(actions[i].RouletteId, getWinnerPrize(actions[i].Handle, '0'));
                 }
                 if (actions[i].Bet == winnerColor)
                 {
                     WinnersId.Add(actions[i].Id);
-                    updateCreditPrize(actions[i].UserId, actions[i].Handle, '1');
-                    updateProfitPrize(actions[i].RouletteId, getPrizeWinner(actions[i].Handle, '1'));
+                    updateCreditbyPrize(actions[i].UserId, actions[i].Handle, '1');
+                    updateProfitbyPrize(actions[i].RouletteId, getWinnerPrize(actions[i].Handle, '1'));
                 }
             }
             if (WinnersId.Count > 0)
@@ -337,7 +337,7 @@ namespace GamblingApp.Controllers
         
         [ApiExplorerSettings(IgnoreApi = true)]
         // Get winner color based in requeriments 
-        public string getColor(int winnerNumber)
+        public string getWinnerColor(int winnerNumber)
         {
             if (winnerNumber == 0 || winnerNumber % 2 == 0)
                 return "rojo";
@@ -347,7 +347,7 @@ namespace GamblingApp.Controllers
         
         [ApiExplorerSettings(IgnoreApi = true)]
         // Calculate prize based in requeriments (color 1.8X and number 5X) 
-        public double getPrizeWinner(double handle,char typeBeatWon)
+        public double getWinnerPrize(double handle,char typeBeatWon)
         {
             if (typeBeatWon == '0')
             {
@@ -433,7 +433,7 @@ namespace GamblingApp.Controllers
         
         [ApiExplorerSettings(IgnoreApi = true)]
         // Update user credit by prize
-        public void updateCreditPrize(string userId, double handle, char typeBetWon)
+        public void updateCreditbyPrize(string userId, double handle, char typeBetWon)
         {
             double currentCredit = getCredit(userId);
             if (currentCredit >= 0)
@@ -445,7 +445,7 @@ namespace GamblingApp.Controllers
                     using (SqlCommand cmd = new SqlCommand(query, con))
                     {
                         cmd.Connection = con;
-                        cmd.Parameters.AddWithValue("@Credit", currentCredit+getPrizeWinner(handle, typeBetWon));
+                        cmd.Parameters.AddWithValue("@Credit", currentCredit+getWinnerPrize(handle, typeBetWon));
                         con.Open();
                         int i = cmd.ExecuteNonQuery();
                         con.Close();
@@ -456,7 +456,7 @@ namespace GamblingApp.Controllers
         
         [ApiExplorerSettings(IgnoreApi = true)]
         // Update roulette profit by prize
-        public void updateProfitPrize(int id, double prize)
+        public void updateProfitbyPrize(int id, double prize)
         {
             double currentProfit = getProfit(id);
             if (currentProfit >= 0)
