@@ -41,9 +41,9 @@ namespace GamblingApp.Controllers
                             {
                                 Id = Convert.ToInt32(sdr["Id"]),
                                 Status = Convert.ToBoolean(sdr["Status"]),
-                                CreationDateTime = Convert.ToDateTime(sdr["CreationDateTime"]),
-                                OpenDateTime = Convert.ToDateTime(sdr["OpenDateTime"]),
-                                ClousureDateTime = Convert.ToDateTime(sdr["ClousureDateTime"]),
+                                CreationDateTime = Formatter(Convert.ToDateTime(sdr["CreationDateTime"])),
+                                OpenDateTime = Formatter(Convert.ToDateTime(sdr["OpenDateTime"])),
+                                ClousureDateTime = Formatter(Convert.ToDateTime(sdr["ClousureDateTime"])),
                                 WinnerNumber = Convert.ToInt32(sdr["WinnerNumber"]),
                                 Profit = Convert.ToDouble(sdr["Profit"])
                             });
@@ -76,9 +76,9 @@ namespace GamblingApp.Controllers
                             {
                                 Id = Convert.ToInt32(sdr["Id"]),
                                 Status = Convert.ToBoolean(sdr["Status"]),
-                                CreationDateTime = Convert.ToDateTime(sdr["CreationDateTime"]),
-                                OpenDateTime = Convert.ToDateTime(sdr["OpenDateTime"]),
-                                ClousureDateTime = Convert.ToDateTime(sdr["ClousureDateTime"]),
+                                CreationDateTime = Formatter(Convert.ToDateTime(sdr["CreationDateTime"])),
+                                OpenDateTime = Formatter(Convert.ToDateTime(sdr["OpenDateTime"])),
+                                ClousureDateTime = Formatter(Convert.ToDateTime(sdr["ClousureDateTime"])),
                                 WinnerNumber = Convert.ToInt32(sdr["WinnerNumber"]),
                                 Profit = Convert.ToDouble(sdr["Profit"])
                             };
@@ -319,7 +319,7 @@ namespace GamblingApp.Controllers
                             actions.Add(new ActionModel
                             {
                                 Id = Convert.ToInt32(sdr["Id"]),
-                                CreationDateTime = Convert.ToDateTime(sdr["CreationDateTime"]),
+                                CreationDateTime = Formatter(Convert.ToDateTime(sdr["CreationDateTime"])),
                                 BetType = Convert.ToBoolean(sdr["BetType"]),
                                 Bet = Convert.ToString(sdr["Bet"]),
                                 Handle = Convert.ToDouble(sdr["Handle"]),
@@ -475,6 +475,23 @@ namespace GamblingApp.Controllers
                     }
                 }
             }       
+        }
+        
+        [ApiExplorerSettings(IgnoreApi = true)]
+        //Datetime formatter based in requeriments
+        public string Formatter(DateTime datetime)
+        {
+            string final = "";
+            TimeZoneInfo localZone = TimeZoneInfo.Local;
+            if (localZone.DisplayName.Contains("(UTC)"))
+            {
+                final = datetime.ToString("yyyy-MM-ddTHH:mm:ssZ");
+            }
+            if (localZone.DisplayName.Contains("(UTC-05:00)"))
+            {
+                final = datetime.ToString("yyyy-MM-ddTHH:mm:sszzz");
+            }
+            return final;
         }
         #endregion
 

@@ -3,7 +3,7 @@
     public class ActionModel
     {
         public int Id { get; set; }
-        public DateTime CreationDateTime { get; set; }
+        public string CreationDateTime { get; set; }
         public bool BetType { get; set; } // false = Number true=Color
         public string Bet { get; set; }
         public double Handle { get; set; }

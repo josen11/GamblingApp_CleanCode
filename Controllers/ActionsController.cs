@@ -39,7 +39,7 @@ namespace GamblingApp.Controllers
                             actions.Add(new ActionModel
                             {
                                 Id = Convert.ToInt32(sdr["Id"]),
-                                CreationDateTime = Convert.ToDateTime(sdr["CreationDateTime"]),
+                                CreationDateTime = Formatter(Convert.ToDateTime(sdr["CreationDateTime"])),
                                 BetType = Convert.ToBoolean(sdr["BetType"]),
                                 Bet = Convert.ToString(sdr["Bet"]),
                                 Handle = Convert.ToDouble(sdr["Handle"]),
@@ -75,7 +75,7 @@ namespace GamblingApp.Controllers
                             actionObj = new ActionModel
                             {
                                 Id = Convert.ToInt32(sdr["Id"]),
-                                CreationDateTime = Convert.ToDateTime(sdr["CreationDateTime"]),
+                                CreationDateTime = Formatter(Convert.ToDateTime(sdr["CreationDateTime"])),
                                 BetType = Convert.ToBoolean(sdr["BetType"]),
                                 Bet = Convert.ToString(sdr["Bet"]),
                                 Handle = Convert.ToDouble(sdr["Handle"]),
@@ -268,6 +268,23 @@ namespace GamblingApp.Controllers
             {
                 return rouletteObj.Profit;
             }
+        }
+
+        [ApiExplorerSettings(IgnoreApi = true)]
+        //Datetime formatter based in requeriments
+        public string Formatter(DateTime datetime)
+        {
+            string final = "";
+            TimeZoneInfo localZone = TimeZoneInfo.Local;
+            if (localZone.DisplayName.Contains("(UTC)"))
+            {
+                final= datetime.ToString("yyyy-MM-ddTHH:mm:ssZ");
+            }
+            if (localZone.DisplayName.Contains("(UTC-05:00)"))
+            {
+                final= datetime.ToString("yyyy-MM-ddTHH:mm:sszzz");
+            }
+            return final;
         }
         #endregion
 
