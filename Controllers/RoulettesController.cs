@@ -1,4 +1,5 @@
-﻿using GamblingApp.Models;
+﻿using GamblingApp.DTO;
+using GamblingApp.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using System.Data.SqlClient;
@@ -114,6 +115,43 @@ namespace GamblingApp.Controllers
                     if (i > 0)
                     {
                         return Ok();
+                    }
+                    con.Close();
+                }
+            }
+            return BadRequest();
+        }
+        // POST api/<RoulettesController>/create
+        [Route("create")]
+        [HttpPost]
+        public async Task<ActionResult<RouletteCreateResponseDTO>> create()
+        {
+            string constr = appSettings.Value.DefaultConnection;
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                //inserting Patient data into database
+                string query = "insert into Roulette output INSERTED.ID values (@Status, @CreationDateTime, @ClousureDateTime,@WinnerNumber,@Profit)";
+                using (SqlCommand cmd = new SqlCommand(query, con))
+                {
+                    cmd.Connection = con;
+                    cmd.Parameters.AddWithValue("@Status", false);
+                    cmd.Parameters.AddWithValue("@CreationDateTime", DateTime.Now);
+                    cmd.Parameters.AddWithValue("@ClousureDateTime", "");
+                    cmd.Parameters.AddWithValue("@WinnerNumber", -1);
+                    cmd.Parameters.AddWithValue("@Profit", 0);
+                    con.Open();
+                    int modified = (int)cmd.ExecuteScalar();
+                    if (modified > 0)
+                    {
+                        var dto = new RouletteCreateResponseDTO()
+                        {
+                            Id = modified
+                        };
+                        return Ok(dto);
                     }
                     con.Close();
                 }
