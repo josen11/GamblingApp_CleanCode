@@ -200,7 +200,6 @@ namespace GamblingApp.Controllers
         //Update user credit after placing the bet
         public void updateCredit(string userId, double handle)
         {
-            _logger.LogInformation("Entra a updateCredit");
             string constr = appSettings.Value.DefaultConnection;
             using (SqlConnection con = new SqlConnection(constr))
             {
@@ -208,8 +207,7 @@ namespace GamblingApp.Controllers
                 using (SqlCommand cmd = new SqlCommand(query, con))
                 {
                     cmd.Connection = con;
-                    _logger.LogInformation($"Validate credit for userId {userId} = {validateCredit(userId, handle)}");
-                    cmd.Parameters.AddWithValue("@Credit", validateCredit(userId,handle));
+                    cmd.Parameters.AddWithValue("@Credit", validateCredit(userId:userId,handle:handle));
                     con.Open();
                     int i = cmd.ExecuteNonQuery();
                     con.Close();
@@ -333,7 +331,7 @@ namespace GamblingApp.Controllers
             {
                 return BadRequest(ModelState);
             }
-            if (validateStatusRoulette(ActionModel.RouletteId) && validateCredit(userId, ActionModel.Handle) >= 0 && validateBet(ActionModel.BetType, ActionModel.Bet)&&ActionModel.Handle<=10000)
+            if (validateStatusRoulette(ActionModel.RouletteId) && validateCredit(userId:userId, handle:ActionModel.Handle) >= 0 && validateBet(type:ActionModel.BetType, Bet: ActionModel.Bet)&&ActionModel.Handle<=10000)
             {
                 using (SqlConnection con = new SqlConnection(constr))
                 {
@@ -353,8 +351,8 @@ namespace GamblingApp.Controllers
                         if (i > 0)
                         {
                             _logger.LogInformation("OK bet");
-                            this.updateCredit(userId, ActionModel.Handle);
-                            this.updateProfit(ActionModel.RouletteId, ActionModel.Handle);
+                            updateCredit(userId:userId, handle:ActionModel.Handle);
+                            updateProfit(id:ActionModel.RouletteId, handle: ActionModel.Handle);
                             return Ok("OK. Bet done");
                         }
                         con.Close();
@@ -365,9 +363,9 @@ namespace GamblingApp.Controllers
             {
                 if(validateStatusRoulette(ActionModel.RouletteId)==false)
                     return BadRequest("Error. Roulette closed");
-                if (validateCredit(userId, ActionModel.Handle) < 0)
+                if (validateCredit(userId:userId,handle:ActionModel.Handle) < 0)
                     return BadRequest("Error. Without enough credit");
-                if (validateBet(ActionModel.BetType, ActionModel.Bet) == false)
+                if (validateBet(type:ActionModel.BetType, Bet:ActionModel.Bet) == false)
                     return BadRequest("Error. Incorrect bet format");
                 if (ActionModel.Handle > 10000)
                     return BadRequest("Error. Maximum handle exceded");
