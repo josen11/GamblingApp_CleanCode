@@ -39,6 +39,7 @@ namespace GamblingApp.Controllers
                                 Id = Convert.ToInt32(sdr["Id"]),
                                 Status = Convert.ToBoolean(sdr["Status"]),
                                 CreationDateTime = Convert.ToDateTime(sdr["CreationDateTime"]),
+                                OpenDateTime = Convert.ToDateTime(sdr["OpenDateTime"]),
                                 ClousureDateTime = Convert.ToDateTime(sdr["ClousureDateTime"]),
                                 WinnerNumber = Convert.ToInt32(sdr["WinnerNumber"]),
                                 Profit = Convert.ToDouble(sdr["Profit"])
@@ -73,6 +74,7 @@ namespace GamblingApp.Controllers
                                 Id = Convert.ToInt32(sdr["Id"]),
                                 Status = Convert.ToBoolean(sdr["Status"]),
                                 CreationDateTime = Convert.ToDateTime(sdr["CreationDateTime"]),
+                                OpenDateTime = Convert.ToDateTime(sdr["OpenDateTime"]),
                                 ClousureDateTime = Convert.ToDateTime(sdr["ClousureDateTime"]),
                                 WinnerNumber = Convert.ToInt32(sdr["WinnerNumber"]),
                                 Profit = Convert.ToDouble(sdr["Profit"])
@@ -101,12 +103,13 @@ namespace GamblingApp.Controllers
             using (SqlConnection con = new SqlConnection(constr))
             {
                 //inserting Patient data into database
-                string query = "insert into Roulette values (@Status, @CreationDateTime, @ClousureDateTime,@WinnerNumber,@Profit)";
+                string query = "insert into Roulette values (@Status, @CreationDateTime, @ClousureDateTime,@WinnerNumber,@Profit, @OpenDateTime)";
                 using (SqlCommand cmd = new SqlCommand(query, con))
                 {
                     cmd.Connection = con;
                     cmd.Parameters.AddWithValue("@Status", rouletteModel.Status);
                     cmd.Parameters.AddWithValue("@CreationDateTime", rouletteModel.CreationDateTime);
+                    cmd.Parameters.AddWithValue("@OpenDateTime", rouletteModel.OpenDateTime);
                     cmd.Parameters.AddWithValue("@ClousureDateTime", rouletteModel.ClousureDateTime);
                     cmd.Parameters.AddWithValue("@WinnerNumber", rouletteModel.WinnerNumber);
                     cmd.Parameters.AddWithValue("@Profit", rouletteModel.Profit);
@@ -133,13 +136,14 @@ namespace GamblingApp.Controllers
             using (SqlConnection con = new SqlConnection(constr))
             {
                 //inserting Patient data into database
-                string query = "insert into Roulette output INSERTED.ID values (@Status, @CreationDateTime, @ClousureDateTime,@WinnerNumber,@Profit)";
+                string query = "insert into Roulette output INSERTED.ID values (@Status, @CreationDateTime, @ClousureDateTime,@WinnerNumber,@Profit,@OpenDateTime)";
                 using (SqlCommand cmd = new SqlCommand(query, con))
                 {
                     cmd.Connection = con;
                     cmd.Parameters.AddWithValue("@Status", false);
                     cmd.Parameters.AddWithValue("@CreationDateTime", DateTime.Now);
                     cmd.Parameters.AddWithValue("@ClousureDateTime", "");
+                    cmd.Parameters.AddWithValue("@OpenDateTime", "");
                     cmd.Parameters.AddWithValue("@WinnerNumber", -1);
                     cmd.Parameters.AddWithValue("@Profit", 0);
                     con.Open();
@@ -159,7 +163,7 @@ namespace GamblingApp.Controllers
         }
 
         // PUT api/<RoulettesController>/open/5/
-       // [Route("open")]
+        // [Route("open")]
         [HttpPut("[action]/{id}")]
         public async Task<IActionResult> open(long id)
         {
@@ -174,6 +178,7 @@ namespace GamblingApp.Controllers
                     {
                         cmd.Connection = con;
                         cmd.Parameters.AddWithValue("@OpenDateTime", DateTime.Now);
+                        cmd.Parameters.AddWithValue("@Id", id);
                         con.Open();
                         int i = cmd.ExecuteNonQuery();
                         if (i > 0)
@@ -195,7 +200,6 @@ namespace GamblingApp.Controllers
                         con.Close();
                     }
                 }
-
             }
             return BadRequest(ModelState);
         }
@@ -214,7 +218,7 @@ namespace GamblingApp.Controllers
             {
                 string query = "UPDATE Roulette SET Status = @Status, CreationDateTime = @CreationDateTime," +
                     "ClousureDateTime=@ClousureDateTime," +
-                    "WinnerNumber=@WinnerNumber,Profit=@Profit Where Id =@Id";
+                    "WinnerNumber=@WinnerNumber,Profit=@Profit, OpenDateTime=@OpenDateTime Where Id =@Id";
                 using (SqlConnection con = new SqlConnection(constr))
                 {
                     using (SqlCommand cmd = new SqlCommand(query))
@@ -223,6 +227,7 @@ namespace GamblingApp.Controllers
                         cmd.Parameters.AddWithValue("@Status", rouletteModel.Status);
                         cmd.Parameters.AddWithValue("@CreationDateTime", rouletteModel.CreationDateTime);
                         cmd.Parameters.AddWithValue("@ClousureDateTime", rouletteModel.ClousureDateTime);
+                        cmd.Parameters.AddWithValue("@OpenDateTime", rouletteModel.OpenDateTime);
                         cmd.Parameters.AddWithValue("@WinnerNumber", rouletteModel.WinnerNumber);
                         cmd.Parameters.AddWithValue("@Profit", rouletteModel.Profit);
                         cmd.Parameters.AddWithValue("@Id", rouletteModel.Id);
