@@ -1,4 +1,5 @@
-﻿using GamblingApp.Models;
+﻿using GamblingApp.DTO;
+using GamblingApp.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using System.Data.SqlClient;
@@ -12,9 +13,12 @@ namespace GamblingApp.Controllers
     public class ActionsController : ControllerBase
     {
         private readonly IOptions<ConnectionStrings> appSettings;
-        public ActionsController(IOptions<ConnectionStrings> app)
+        private readonly ILogger<ActionsController> _logger;
+
+        public ActionsController(IOptions<ConnectionStrings> app, ILogger<ActionsController> logger)
         {
             appSettings = app;
+            _logger = logger;
         }
         // GET: api/<ActionsController>
         [HttpGet]
@@ -92,6 +96,175 @@ namespace GamblingApp.Controllers
             return actionObj;
         }
 
+        #region Validations and functions
+        [ApiExplorerSettings(IgnoreApi = true)]
+        public bool validateStatusRoulette(int id)
+        {
+            string constr = appSettings.Value.DefaultConnection;
+            RouletteStatusDTO rouletteObj = new RouletteStatusDTO();
+            string query = "SELECT status FROM Roulette where Id=" + id;
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                using (SqlCommand cmd = new SqlCommand(query))
+                {
+                    cmd.Connection = con;
+                    con.Open();
+                    using (SqlDataReader sdr = cmd.ExecuteReader())
+                    {
+                        while (sdr.Read())
+                        {
+                            rouletteObj = new RouletteStatusDTO
+                            {
+                                Status = Convert.ToBoolean(sdr["Status"])
+                            };
+                        }
+                    }
+                    con.Close();
+                }
+            }
+            if (rouletteObj == null)
+            {
+                return false;
+            }
+            else
+            {
+                if (rouletteObj.Status)
+                    return true;
+                else
+                    return false;
+            }
+        }
+        [ApiExplorerSettings(IgnoreApi = true)]
+        public bool validateBet(bool type,string Bet)
+        {
+            //False=Number True=Color
+            string finalbet = Bet.ToLower().Trim();
+            if (type)
+            {
+                if (finalbet == "negro" || finalbet == "rojo")
+                    return true;
+                else
+                    return false;
+            }
+            else
+            {
+                if (int.TryParse(finalbet, out int value))
+                {
+                    if (value >= 0 && value <= 36)
+                        return true;
+                    else
+                        return false;
+                }
+                else
+                    return false;
+            }
+        }
+        [ApiExplorerSettings(IgnoreApi = true)]
+        public double validateCredit(string userId, double handle)
+        {
+            string constr = appSettings.Value.DefaultConnection;
+            UsersCreditDTO userCredit = new UsersCreditDTO();
+            string query = "SELECT Credit FROM Users where UserId='" + userId+"'";
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                using (SqlCommand cmd = new SqlCommand(query))
+                {
+                    cmd.Connection = con;
+                    con.Open();
+                    using (SqlDataReader sdr = cmd.ExecuteReader())
+                    {
+                        while (sdr.Read())
+                        {
+                            userCredit = new UsersCreditDTO
+                            {
+                                Credit = Convert.ToDouble(sdr["Credit"])
+                            };
+                        }
+                    }
+                    con.Close();
+                }
+            }
+            if (userCredit == null)
+            {
+                return 0;
+            }
+            else
+            {
+                return userCredit.Credit - handle;
+            }
+        }
+        [ApiExplorerSettings(IgnoreApi = true)]
+        public void updateCredit(string userId, double handle)
+        {
+            _logger.LogInformation("Entra a updateCredit");
+            string constr = appSettings.Value.DefaultConnection;
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                string query = "UPDATE Users SET Credit=@Credit where UserId='" + userId + "'";
+                using (SqlCommand cmd = new SqlCommand(query, con))
+                {
+                    cmd.Connection = con;
+                    _logger.LogInformation($"Validate credit for userId {userId} = {validateCredit(userId, handle)}");
+                    cmd.Parameters.AddWithValue("@Credit", validateCredit(userId,handle));
+                    con.Open();
+                    int i = cmd.ExecuteNonQuery();
+                    con.Close();
+                }
+            }
+        }
+        [ApiExplorerSettings(IgnoreApi = true)]
+        public void updateProfit(int id, double handle)
+        {
+            string constr = appSettings.Value.DefaultConnection;
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                string query = "UPDATE Roulette SET Profit=@Profit where Id=" + id;
+                using (SqlCommand cmd = new SqlCommand(query, con))
+                {
+                    cmd.Connection = con;
+                    cmd.Parameters.AddWithValue("@Profit", validateRouletteProfit(id) + handle);
+                    con.Open();
+                    int i = cmd.ExecuteNonQuery();
+                    con.Close();
+                }
+            }
+        }
+        [ApiExplorerSettings(IgnoreApi = true)]
+        public double validateRouletteProfit(int id)
+        {
+            string constr = appSettings.Value.DefaultConnection;
+            RouletteProfitDTO rouletteObj = new RouletteProfitDTO();
+            string query = "SELECT Profit FROM Roulette where Id=" + id;
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                using (SqlCommand cmd = new SqlCommand(query))
+                {
+                    cmd.Connection = con;
+                    con.Open();
+                    using (SqlDataReader sdr = cmd.ExecuteReader())
+                    {
+                        while (sdr.Read())
+                        {
+                            rouletteObj = new RouletteProfitDTO
+                            {
+                                Profit = Convert.ToDouble(sdr["Profit"])
+                            };
+                        }
+                    }
+                    con.Close();
+                }
+            }
+            if (rouletteObj == null)
+            {
+                return -1;
+            }
+            else
+            {
+                return rouletteObj.Profit;
+            }
+        }
+        #endregion
+
         // POST api/<ActionsController>
         [HttpPost]
         public async Task<ActionResult<ActionModel>> Post(ActionModel ActionModel)
@@ -123,6 +296,58 @@ namespace GamblingApp.Controllers
                     }
                     con.Close();
                 }
+            }
+            return BadRequest();
+        }
+
+        // POST api/<ActionsController>
+        [HttpPost("[action]")]
+        public async Task<ActionResult<ActionModel>> create([FromHeader] string userId, CreateActionDTO ActionModel)
+        {
+            string constr = appSettings.Value.DefaultConnection;
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            if (validateStatusRoulette(ActionModel.RouletteId) && validateCredit(userId, ActionModel.Handle) >= 0 && validateBet(ActionModel.BetType, ActionModel.Bet)&&ActionModel.Handle<=10000)
+            {
+                using (SqlConnection con = new SqlConnection(constr))
+                {
+                    //inserting Patient data into database
+                    string query = "insert into Action values (@CreationDateTime, @BetType,@Bet,@Handle,@UserId,@RouletteId,@IsWinner)";
+                    using (SqlCommand cmd = new SqlCommand(query, con))
+                    {
+                        cmd.Connection = con;
+                        cmd.Parameters.AddWithValue("@CreationDateTime", DateTime.Now);
+                        cmd.Parameters.AddWithValue("@BetType", ActionModel.BetType);
+                        cmd.Parameters.AddWithValue("@Bet", ActionModel.Bet);
+                        cmd.Parameters.AddWithValue("@Handle", ActionModel.Handle);
+                        cmd.Parameters.AddWithValue("@UserId", userId);
+                        cmd.Parameters.AddWithValue("@RouletteId", ActionModel.RouletteId);
+                        cmd.Parameters.AddWithValue("@IsWinner", false);
+                        con.Open();
+                        int i = cmd.ExecuteNonQuery();
+                        if (i > 0)
+                        {
+                            _logger.LogInformation("OK bet");
+                            this.updateCredit(userId, ActionModel.Handle);
+                            this.updateProfit(ActionModel.RouletteId, ActionModel.Handle);
+                            return Ok("OK. Bet done");
+                        }
+                        con.Close();
+                    }
+                }
+            }
+            else 
+            {
+                if(validateStatusRoulette(ActionModel.RouletteId)==false)
+                    return BadRequest("Error. Roulette closed");
+                if (validateCredit(userId, ActionModel.Handle) < 0)
+                    return BadRequest("Error. Without enough credit");
+                if (validateBet(ActionModel.BetType, ActionModel.Bet) == false)
+                    return BadRequest("Error. Incorrect bet format");
+                if (ActionModel.Handle > 10000)
+                    return BadRequest("Error. Maximum handle exceded");
             }
             return BadRequest();
         }
