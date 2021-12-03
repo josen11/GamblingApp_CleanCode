@@ -122,8 +122,7 @@ namespace GamblingApp.Controllers
             return BadRequest();
         }
         // POST api/<RoulettesController>/create
-        [Route("create")]
-        [HttpPost]
+        [HttpPost("[action]")]
         public async Task<ActionResult<RouletteCreateResponseDTO>> create()
         {
             string constr = appSettings.Value.DefaultConnection;
@@ -159,6 +158,48 @@ namespace GamblingApp.Controllers
             return BadRequest();
         }
 
+        // PUT api/<RoulettesController>/open/5/
+       // [Route("open")]
+        [HttpPut("[action]/{id}")]
+        public async Task<IActionResult> open(long id)
+        {
+            string constr = appSettings.Value.DefaultConnection;
+            RouletteModel roulette = new RouletteModel();
+            if (ModelState.IsValid)
+            {
+                string query = "UPDATE Roulette SET Status = 1, OpenDateTime = @OpenDateTime Where Id =@Id";
+                using (SqlConnection con = new SqlConnection(constr))
+                {
+                    using (SqlCommand cmd = new SqlCommand(query))
+                    {
+                        cmd.Connection = con;
+                        cmd.Parameters.AddWithValue("@OpenDateTime", DateTime.Now);
+                        con.Open();
+                        int i = cmd.ExecuteNonQuery();
+                        if (i > 0)
+                        {
+                            var dto = new GeneralResponseDTO()
+                            {
+                                Result = "OK"
+                            };
+                            return Ok(dto);
+                        }
+                        else
+                        {
+                            var dto = new GeneralResponseDTO()
+                            {
+                                Result = "Error"
+                            };
+                            return StatusCode(500);
+                        }
+                        con.Close();
+                    }
+                }
+
+            }
+            return BadRequest(ModelState);
+        }
+
         // PUT api/<RoulettesController>/5
         [HttpPut("{id}")]
         public async Task<IActionResult> Put(long id, RouletteModel rouletteModel)
@@ -189,7 +230,19 @@ namespace GamblingApp.Controllers
                         int i = cmd.ExecuteNonQuery();
                         if (i > 0)
                         {
-                            return NoContent();
+                            var dto = new GeneralResponseDTO()
+                            {
+                                Result = "OK"
+                            };
+                            return Ok(dto);
+                        }
+                        else
+                        {
+                            var dto = new GeneralResponseDTO()
+                            {
+                                Result = "Error"
+                            };
+                            return StatusCode(500);
                         }
                         con.Close();
                     }
@@ -198,6 +251,7 @@ namespace GamblingApp.Controllers
             }
             return BadRequest(ModelState);
         }
+        
 
         // DELETE api/<RoulettesController>/5
         [HttpDelete("{id}")]
