@@ -13,9 +13,12 @@ namespace GamblingApp.Controllers
     public class RoulettesController : ControllerBase
     {
         private readonly IOptions<ConnectionStrings> appSettings;
-        public RoulettesController(IOptions<ConnectionStrings> app)
+        private readonly ILogger<ActionsController> _logger;
+
+        public RoulettesController(IOptions<ConnectionStrings> app, ILogger<ActionsController> logger)
         {
             appSettings = app;
+            _logger = logger;
         }
         // GET: api/<RoulettesController>
         [HttpGet]
@@ -165,20 +168,19 @@ namespace GamblingApp.Controllers
         // PUT api/<RoulettesController>/open/5/
         // [Route("open")]
         [HttpPut("[action]/{id}")]
-        public async Task<IActionResult> open(long id)
+        public async Task<IActionResult> open(int id)
         {
             string constr = appSettings.Value.DefaultConnection;
             RouletteModel roulette = new RouletteModel();
             if (ModelState.IsValid)
             {
-                string query = "UPDATE Roulette SET Status = 1, OpenDateTime = @OpenDateTime Where Id =@Id";
+                string query = "UPDATE Roulette SET Status = 1, OpenDateTime = @OpenDateTime Where Id=" +id;
                 using (SqlConnection con = new SqlConnection(constr))
                 {
                     using (SqlCommand cmd = new SqlCommand(query))
                     {
                         cmd.Connection = con;
                         cmd.Parameters.AddWithValue("@OpenDateTime", DateTime.Now);
-                        cmd.Parameters.AddWithValue("@Id", id);
                         con.Open();
                         int i = cmd.ExecuteNonQuery();
                         if (i > 0)
@@ -204,6 +206,286 @@ namespace GamblingApp.Controllers
             return BadRequest(ModelState);
         }
 
+        [HttpPut("[action]/{id}")]
+        public async Task<ActionResult> close(int id)
+        {
+            int WinnerNumber = new Random().Next(0, 37);
+            setWinners(getActionsbyRolette(id), WinnerNumber);
+            string constr = appSettings.Value.DefaultConnection;
+            RouletteModel roulette = new RouletteModel();
+            List<ActionModel> actions = new List<ActionModel>();
+            if (ModelState.IsValid)
+            {
+                string query = "UPDATE Roulette SET Status = 0, ClousureDateTime = @ClousureDateTime,WinnerNumber="+WinnerNumber+" Where Id =" + id;
+                using (SqlConnection con = new SqlConnection(constr))
+                {
+                    using (SqlCommand cmd = new SqlCommand(query))
+                    {
+                        cmd.Connection = con;
+                        cmd.Parameters.AddWithValue("@ClousureDateTime", DateTime.Now);
+                        con.Open();
+                        int i = cmd.ExecuteNonQuery();
+                        if (i > 0)
+                        {
+                            actions = getActionsbyRolette(id);
+                            return Ok(actions);
+                        }
+                        else
+                        {
+                            var dto = new GeneralResponseDTO()
+                            {
+                                Result = "Error"
+                            };
+                            return StatusCode(500);
+                        }
+                        con.Close();
+                    }
+                }
+            }
+            return BadRequest(ModelState);
+        }
+        [ApiExplorerSettings(IgnoreApi = true)]
+        public void setWinners(List<ActionModel> actionsByRoulette, int winnerNumber)
+        {
+            List<ActionModel> actions = actionsByRoulette;
+            List<int> WinnersId = new List<int>();
+            string winnerColor = getColor(winnerNumber);
+            for (int i = 0; i < actions.Count; i++)
+            {
+                if (actions[i].Bet == winnerNumber.ToString())
+                {
+                    WinnersId.Add(actions[i].Id);
+                    updateCreditPrize(actions[i].UserId, actions[i].Handle, '0');
+                    updateProfitPrize(actions[i].RouletteId, getPrizeWinner(actions[i].Handle, '0'));
+                }
+                if (actions[i].Bet == winnerColor)
+                {
+                    WinnersId.Add(actions[i].Id);
+                    updateCreditPrize(actions[i].UserId, actions[i].Handle, '1');
+                    updateProfitPrize(actions[i].RouletteId, getPrizeWinner(actions[i].Handle, '1'));
+                }
+            }
+            if (WinnersId.Count > 0)
+            {
+                string constr = appSettings.Value.DefaultConnection;
+                if (ModelState.IsValid)
+                {
+                    string ids = string.Join(", ", WinnersId);
+                    string query = "UPDATE Action SET IsWinner = 1 WHERE Id IN (" + ids + ")";
+                    using (SqlConnection con = new SqlConnection(constr))
+                    {
+                        using (SqlCommand cmd = new SqlCommand(query))
+                        {
+                            cmd.Connection = con;
+                            con.Open();
+                            int i = cmd.ExecuteNonQuery();
+                            if (i > 0)
+                            {
+                                _logger.LogInformation("IsWinner updated");
+                            }
+                            else
+                            {
+                                _logger.LogInformation("Error when updating IsWinner");
+                            }
+                            con.Close();
+                        }
+                    }
+                }
+            }
+        }
+        [ApiExplorerSettings(IgnoreApi = true)]
+        public List<ActionModel> getActionsbyRolette(int idRoulette)
+        {
+            string constr = appSettings.Value.DefaultConnection;
+            List<ActionModel> actions = new List<ActionModel>();
+            string query = "SELECT * FROM Action where RouletteId="+idRoulette;
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                using (SqlCommand cmd = new SqlCommand(query))
+                {
+                    cmd.Connection = con;
+                    con.Open();
+                    using (SqlDataReader sdr = cmd.ExecuteReader())
+                    {
+                        while (sdr.Read())
+                        {
+                            actions.Add(new ActionModel
+                            {
+                                Id = Convert.ToInt32(sdr["Id"]),
+                                CreationDateTime = Convert.ToDateTime(sdr["CreationDateTime"]),
+                                BetType = Convert.ToBoolean(sdr["BetType"]),
+                                Bet = Convert.ToString(sdr["Bet"]),
+                                Handle = Convert.ToDouble(sdr["Handle"]),
+                                UserId = Convert.ToString(sdr["UserId"]),
+                                RouletteId = Convert.ToInt32(sdr["RouletteId"]),
+                                IsWinner = Convert.ToBoolean(sdr["IsWinner"]),
+                            });
+                        }
+                    }
+                    con.Close();
+                }
+            }
+            return actions;
+        }
+        [ApiExplorerSettings(IgnoreApi = true)]
+        public string getColor(int winnerNumber)
+        {
+            if (winnerNumber == 0 || winnerNumber % 2 == 0)
+                return "rojo";
+            else
+                return "negro";
+        }
+        [ApiExplorerSettings(IgnoreApi = true)]
+        public double getPrizeWinner(double handle,char typeBeatWon)
+        {
+            if (typeBeatWon == '0')
+            {
+                return handle * 5;
+            }
+            else
+            {
+                return handle * 1.8;
+            }
+        }
+        [ApiExplorerSettings(IgnoreApi = true)]
+        public double getCredit(string userId)
+        {
+            string constr = appSettings.Value.DefaultConnection;
+            UsersCreditDTO userCredit = new UsersCreditDTO();
+            string query = "SELECT Credit FROM Users where UserId='" + userId + "'";
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                using (SqlCommand cmd = new SqlCommand(query))
+                {
+                    cmd.Connection = con;
+                    con.Open();
+                    using (SqlDataReader sdr = cmd.ExecuteReader())
+                    {
+                        while (sdr.Read())
+                        {
+                            userCredit = new UsersCreditDTO
+                            {
+                                Credit = Convert.ToDouble(sdr["Credit"])
+                            };
+                        }
+                    }
+                    con.Close();
+                }
+            }
+            if (userCredit == null)
+            {
+                return -1;
+            }
+            else
+            {
+                return userCredit.Credit;
+            }
+        }
+        [ApiExplorerSettings(IgnoreApi = true)]
+        public double getProfit(int Id)
+        {
+            string constr = appSettings.Value.DefaultConnection;
+            RouletteProfitDTO rouletteProfit = new RouletteProfitDTO();
+            string query = "SELECT Profit FROM Roulette where Id=" + Id;
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                using (SqlCommand cmd = new SqlCommand(query))
+                {
+                    cmd.Connection = con;
+                    con.Open();
+                    using (SqlDataReader sdr = cmd.ExecuteReader())
+                    {
+                        while (sdr.Read())
+                        {
+                            rouletteProfit = new RouletteProfitDTO
+                            {
+                                Profit = Convert.ToDouble(sdr["Profit"])
+                            };
+                        }
+                    }
+                    con.Close();
+                }
+            }
+            if (rouletteProfit == null)
+            {
+                return -1;
+            }
+            else
+            {
+                return rouletteProfit.Profit;
+            }
+        }
+        [ApiExplorerSettings(IgnoreApi = true)]
+        public void updateCreditPrize(string userId, double handle, char typeBetWon)
+        {
+            double currentCredit = getCredit(userId);
+            if (currentCredit >= 0)
+            {
+                string constr = appSettings.Value.DefaultConnection;
+                using (SqlConnection con = new SqlConnection(constr))
+                {
+                    string query = "UPDATE Users SET Credit=@Credit where UserId='" + userId + "'";
+                    using (SqlCommand cmd = new SqlCommand(query, con))
+                    {
+                        cmd.Connection = con;
+                        cmd.Parameters.AddWithValue("@Credit", currentCredit+getPrizeWinner(handle, typeBetWon));
+                        con.Open();
+                        int i = cmd.ExecuteNonQuery();
+                        con.Close();
+                    }
+                }
+            }
+        }
+        [ApiExplorerSettings(IgnoreApi = true)]
+        public void updateProfitPrize(int id, double prize)
+        {
+            double currentProfit = getProfit(id);
+            if (currentProfit >= 0)
+            {
+                string constr = appSettings.Value.DefaultConnection;
+                using (SqlConnection con = new SqlConnection(constr))
+                {
+                    string query = "UPDATE Roulette SET Profit=@Profit where Id=" + id;
+                    using (SqlCommand cmd = new SqlCommand(query, con))
+                    {
+                        cmd.Connection = con;
+                        cmd.Parameters.AddWithValue("@Profit", currentProfit - prize);
+                        con.Open();
+                        int i = cmd.ExecuteNonQuery();
+                        con.Close();
+                    }
+                }
+            }       
+        }
+        [ApiExplorerSettings(IgnoreApi = true)]
+        public void updateWinnerNumber(int idRoulette, int winnerNumber)
+        {
+            string constr = appSettings.Value.DefaultConnection;
+            RouletteModel roulette = new RouletteModel();
+            List<ActionModel> actions = new List<ActionModel>();
+            if (ModelState.IsValid)
+            {
+                string query = "UPDATE Rulette SET WinnerNumber = " + winnerNumber + " Where Id =" + idRoulette;
+                using (SqlConnection con = new SqlConnection(constr))
+                {
+                    using (SqlCommand cmd = new SqlCommand(query))
+                    {
+                        cmd.Connection = con;
+                        con.Open();
+                        int i = cmd.ExecuteNonQuery();
+                        if (i > 0)
+                        {
+                            _logger.LogInformation("Winner number updated");
+                        }
+                        else
+                        {
+                            _logger.LogInformation("Error when updating Winner number");
+                        }
+                        con.Close();
+                    }
+                }
+            }
+        }
         // PUT api/<RoulettesController>/5
         [HttpPut("{id}")]
         public async Task<IActionResult> Put(long id, RouletteModel rouletteModel)
