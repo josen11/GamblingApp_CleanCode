@@ -3,9 +3,12 @@
 
 <!-- ABOUT THE PROJECT -->
 ## About The Project
-![The San Juan Mountains are beautiful!](/assets/images/san-juan-mountains.jpg "San Juan Mountains")
-[product-screenshot]:https://drive.google.com/file/d/1JbgFofv-2b0pQK6kd2hZYzV-1-3ABFv2/view?usp=sharing
-[![Product Name Screen Shot][product-screenshot]
+[1]:
+
+[![The San Juan Mountains are beautiful!](/assets/images/san-juan-mountains.jpg "San Juan Mountains")
+
+![alt text](https://drive.google.com/file/d/1JbgFofv-2b0pQK6kd2hZYzV-1-3ABFv2/view?usp=sharing)
+[![Product Name Screen Shot][1]
 
 API REST que permita la creacion y control de ruletas y apuestas.
 
@@ -64,10 +67,10 @@ Para correr el aplicativo sera necesario instalar previamente los requisitos
    git clone https://github.com/josen11/GamblingApp_CleanCode.git
    ```
 3. Instalar .NET 6
-4. Correr la aplicacio
-   ```dotnet
+4. Correr la aplicacion
+  ```sh
   dotnet run
-   ```
+  ```
 5. Testear API ya sea con Swagger (disponible al momento de abrir el API) o Postman (Endpoint /api/Roulettes/create)
 
 <!-- LICENSE -->
@@ -76,8 +79,4 @@ Para correr el aplicativo sera necesario instalar previamente los requisitos
 Distributed under the MIT License. See `LICENSE.txt` for more information.
 
 <p align="right">(<a href="#top">back to top</a>)</p>
-
-<!-- MARKDOWN LINKS & IMAGES -->
-<!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-
 
