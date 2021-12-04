@@ -10,6 +10,11 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddLogging(config =>
+{
+    config.AddAWSProvider(builder.Configuration.GetAWSLoggingConfigSection());
+    //config.SetMinimumLevel(LogLevel.Debug);
+});
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

@@ -49,6 +49,7 @@ namespace GamblingApp.Controllers
                             });
                         }
                     }
+                    _logger.LogInformation($"Get all roulettes. Retrieved {roulettes.Count} item(s)");
                     con.Close();
                 }
             }
@@ -84,11 +85,13 @@ namespace GamblingApp.Controllers
                             };
                         }
                     }
+                    _logger.LogInformation($"Get roulette id {id}");
                     con.Close();
                 }
             }
             if (rouletteObj == null)
             {
+                _logger.LogWarning($"Not found id  {id} ");
                 return NotFound();
             }
             return rouletteObj;
@@ -154,6 +157,7 @@ namespace GamblingApp.Controllers
                     int modified = (int)cmd.ExecuteScalar();
                     if (modified > 0)
                     {
+                        _logger.LogInformation($"New roulette created: Id {modified}");
                         var dto = new RouletteCreateResponseDTO()
                         {
                             Id = modified
@@ -186,6 +190,7 @@ namespace GamblingApp.Controllers
                         int i = cmd.ExecuteNonQuery();
                         if (i > 0)
                         {
+                            _logger.LogInformation($"Roulette id {id} opened");
                             var dto = new GeneralResponseDTO()
                             {
                                 Result = "OK"
@@ -194,6 +199,7 @@ namespace GamblingApp.Controllers
                         }
                         else
                         {
+                            _logger.LogError($"Error when roulette id {id} was trying to open");
                             var dto = new GeneralResponseDTO()
                             {
                                 Result = "Error"
@@ -213,6 +219,7 @@ namespace GamblingApp.Controllers
         public async Task<ActionResult> close(int id)
         {
             int WinnerNumber = new Random().Next(0, 37);
+            _logger.LogInformation($"Winner Number for Roulette {id}:  {WinnerNumber}");
             setWinners(actionsByRoulette:getActionsbyRolette(id), winnerNumber:WinnerNumber);
             string constr = appSettings.Value.DefaultConnection;
             RouletteModel roulette = new RouletteModel();
@@ -228,20 +235,22 @@ namespace GamblingApp.Controllers
                         cmd.Parameters.AddWithValue("@ClousureDateTime", DateTime.Now);
                         con.Open();
                         int i = cmd.ExecuteNonQuery();
+                        con.Close();
                         if (i > 0)
                         {
                             actions = getActionsbyRolette(id);
+                            _logger.LogInformation($"Roulette id {id} closed. Total done actions {actions.Count}");
                             return Ok(actions);
                         }
                         else
                         {
+                            _logger.LogError($"Error when roulette id {id} was trying to close");
                             var dto = new GeneralResponseDTO()
                             {
                                 Result = "Error"
                             };
                             return StatusCode(500);
                         }
-                        con.Close();
                     }
                 }
             }
@@ -261,13 +270,17 @@ namespace GamblingApp.Controllers
                 {
                     WinnersId.Add(actions[i].Id);
                     updateCreditbyPrize(userId:actions[i].UserId, handle:actions[i].Handle,typeBet: '0');
+                    _logger.LogInformation($"Number bet Winner: Paid prize to Userid {actions[i].UserId}");
                     updateProfitbyPrize(id:actions[i].RouletteId, prize:getWinnerPrize(actions[i].Handle, typeBet: '0'));
+                    _logger.LogInformation($"Roulette {actions[i].RouletteId} profit updated after pay prize");
                 }
                 if (actions[i].Bet == winnerColor)
                 {
                     WinnersId.Add(actions[i].Id);
                     updateCreditbyPrize(userId:actions[i].UserId, handle:actions[i].Handle, typeBet:'1');
+                    _logger.LogInformation($"Color bet Winner: Paid prize to Userid {actions[i].UserId}");
                     updateProfitbyPrize(id:actions[i].RouletteId, prize:getWinnerPrize(actions[i].Handle, typeBet: '1'));
+                    _logger.LogInformation($"Roulette {actions[i].RouletteId} profit updated after pay prize");
                 }
             }
             if (WinnersId.Count > 0)
@@ -290,7 +303,7 @@ namespace GamblingApp.Controllers
                             }
                             else
                             {
-                                _logger.LogInformation("Error when updating IsWinner");
+                                _logger.LogError("Error when updating IsWinner");
                             }
                             con.Close();
                         }
@@ -329,6 +342,7 @@ namespace GamblingApp.Controllers
                             });
                         }
                     }
+                    _logger.LogInformation($"Get actions by roulette {idRoulette}: Retrieved items {actions.Count}");
                     con.Close();
                 }
             }
@@ -387,10 +401,12 @@ namespace GamblingApp.Controllers
             }
             if (userCredit == null)
             {
+                _logger.LogWarning($"Not found userId {userId}");
                 return -1;
             }
             else
             {
+                _logger.LogInformation($"Userid {userId} credit retrieved: {userCredit.Credit}");
                 return userCredit.Credit;
             }
         }
@@ -423,10 +439,12 @@ namespace GamblingApp.Controllers
             }
             if (rouletteProfit == null)
             {
+                _logger.LogWarning($"Not found roulette id {Id}");
                 return -1;
             }
             else
             {
+                _logger.LogInformation($"Roulette id {Id} profit retrieved: {rouletteProfit.Profit}");
                 return rouletteProfit.Profit;
             }
         }
@@ -524,8 +542,10 @@ namespace GamblingApp.Controllers
                         cmd.Parameters.AddWithValue("@Id", rouletteModel.Id);
                         con.Open();
                         int i = cmd.ExecuteNonQuery();
+                        con.Close();
                         if (i > 0)
                         {
+                            _logger.LogWarning($"Roulette {id} updated");
                             var dto = new GeneralResponseDTO()
                             {
                                 Result = "OK"
@@ -534,13 +554,13 @@ namespace GamblingApp.Controllers
                         }
                         else
                         {
+                            _logger.LogError($"Error when roulette id {id} was trying to update");
                             var dto = new GeneralResponseDTO()
                             {
                                 Result = "Error"
                             };
                             return StatusCode(500);
                         }
-                        con.Close();
                     }
                 }
 
@@ -562,6 +582,7 @@ namespace GamblingApp.Controllers
                     int i = cmd.ExecuteNonQuery();
                     if (i > 0)
                     {
+                        _logger.LogWarning($"Roulette {id} deleted");
                         return NoContent();
                     }
                     con.Close();
