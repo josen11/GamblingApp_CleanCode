@@ -1,15 +1,10 @@
 # Prueba Clean Code - GamblingApp
 <div id="top"></div>
 
-[![LinkedIn][linkedin-shield]][linkedin-url]
-
-<!-- PROJECT LOGO -->
-<br />
-<div align="center">
-</div>
-
 <!-- ABOUT THE PROJECT -->
 ## About The Project
+![The San Juan Mountains are beautiful!](/assets/images/san-juan-mountains.jpg "San Juan Mountains")
+[product-screenshot]:https://drive.google.com/file/d/1JbgFofv-2b0pQK6kd2hZYzV-1-3ABFv2/view?usp=sharing
 [![Product Name Screen Shot][product-screenshot]
 
 API REST que permita la creacion y control de ruletas y apuestas.
@@ -84,5 +79,5 @@ Distributed under the MIT License. See `LICENSE.txt` for more information.
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[linkedin-url]: https://www.linkedin.com/in/jos%C3%A9-enrique-aguirre-chavez-8392734b/
-[product-screenshot]:https://drive.google.com/file/d/1JbgFofv-2b0pQK6kd2hZYzV-1-3ABFv2/view?usp=sharing
+
+
